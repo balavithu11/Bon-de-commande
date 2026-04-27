@@ -370,13 +370,13 @@
   <div class="photo-zone" id="photo-zone" onclick="document.getElementById('photo-input').click()">
     <div class="photo-placeholder" id="photo-placeholder">
       <div class="icon">📸</div>
-      <p>Prendre une photo ou choisir une image</p>
+      <p>📷 Photo &nbsp;·&nbsp; 🖼️ Galerie &nbsp;·&nbsp; 📄 Fichier</p>
       <small>Les infos seront extraites automatiquement</small>
     </div>
     <img id="photo-preview" alt="Document">
     <div class="photo-overlay">Appuyer pour changer</div>
   </div>
-  <input type="file" id="photo-input" accept="image/*" capture="environment" onchange="handlePhoto(event)">
+  <input type="file" id="photo-input" accept="image/*,application/pdf" onchange="handlePhoto(event)">
   <button class="btn-extract" id="btn-extract" onclick="extractFromPhoto()">
     ✦ Extraire les infos
   </button>
@@ -500,8 +500,28 @@ function setFournisseur(val) {
 function handlePhoto(e) {
   const file = e.target.files[0];
   if (!file) return;
-  photoMime = file.type || 'image/jpeg';
 
+  // PDF → envoyer directement en base64 à Gemini
+  if (file.type === 'application/pdf') {
+    photoMime = 'application/pdf';
+    const reader = new FileReader();
+    reader.onload = ev => {
+      photoBase64 = ev.target.result.split(',')[1];
+      const preview = document.getElementById('photo-preview');
+      preview.style.display = 'none';
+      document.getElementById('photo-placeholder').innerHTML = '<div class="icon">📄</div><p style="color:#e8c84a">PDF chargé</p><small>' + file.name + '</small>';
+      document.getElementById('photo-zone').classList.add('has-photo');
+      document.getElementById('btn-extract').classList.add('visible');
+      document.getElementById('extract-status').className = '';
+      document.getElementById('extract-status').style.display = 'none';
+      extractFromPhoto();
+    };
+    reader.readAsDataURL(file);
+    return;
+  }
+
+  // Image
+  photoMime = file.type || 'image/jpeg';
   const reader = new FileReader();
   reader.onload = ev => {
     photoBase64 = ev.target.result.split(',')[1];
@@ -513,7 +533,6 @@ function handlePhoto(e) {
     document.getElementById('btn-extract').classList.add('visible');
     document.getElementById('extract-status').className = '';
     document.getElementById('extract-status').style.display = 'none';
-    // Lancer l'extraction automatiquement
     extractFromPhoto();
   };
   reader.readAsDataURL(file);
