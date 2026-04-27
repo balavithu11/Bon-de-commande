@@ -561,12 +561,28 @@ async function extractFromPhoto() {
   status.innerHTML = '<span class="spinner"></span>Gemini lit le document...';
 
   try {
-    const prompt = `Tu es un assistant qui extrait des informations de fiches de mission VTC ou de messages de réservation (WhatsApp, email, bon de commande, screenshot).
-Analyse cette image et extrait les informations suivantes si présentes.
-Réponds UNIQUEMENT en JSON valide, sans texte autour, sans backticks.
-Si une info est absente, mets null.
-Format :
-{"client":"NOM, Prénom","heure_pu":"HH:MM","adresse_pu":"adresse complète","destination":"destination + vol si présent","passagers":"nombre"}`;
+    const prompt = `Tu es un expert en extraction de données de fiches de mission VTC / chauffeur privé.
+
+RÈGLES STRICTES :
+- Réponds UNIQUEMENT en JSON valide, sans texte, sans backticks, sans explication
+- Si une info est absente mets null
+
+COMMENT LIRE L'IMAGE :
+- "client" = le nom du passager, souvent en haut en grand (format NOM/Prénom ou NOM, Prénom)
+- "heure_pu" = l'heure de prise en charge (pickup), souvent avec une icône horloge, format HH:MM
+- "adresse_pu" = l'adresse de départ / pickup, souvent avec une icône localisation ou épingle
+- "destination" = l'aéroport ou lieu d'arrivée + numéro de vol si présent (ex: "CDG, Vol DL8743") — l'heure à destination N'est PAS l'heure de PU
+- "passagers" = nombre de passagers (souvent écrit "X pax" ou "private - X pax")
+
+EXEMPLES de ce que tu peux voir :
+- "GRIESER/MARY" → client: "GRIESER/MARY"
+- "06:45" avec icône horloge à gauche → heure_pu: "06:45"
+- "23-25 Rue du Pont Neuf Paris 75001" → adresse_pu: "23-25 Rue du Pont Neuf, Paris 75001"
+- "CDG" + "DL8743" → destination: "CDG, Vol DL8743"
+- "2 pax" → passagers: "2"
+
+Format JSON attendu :
+{"client":"NOM/Prénom","heure_pu":"HH:MM","adresse_pu":"adresse complète","destination":"destination + vol","passagers":"nombre"}`;
 
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
