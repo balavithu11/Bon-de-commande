@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Fiche Mission</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
+
+  :root {
+    --black: #0a0a0a;
+    --white: #f5f2eb;
+    --accent: #e8c84a;
+    --accent2: #c44b2b;
+    --gray: #1e1e1e;
+    --border: #2e2e2e;
+    --text-muted: #666;
+    --radius: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    padding-bottom: 120px;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--black);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 20px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    line-height: 1;
+  }
+  header h1 span { color: var(--accent); }
+  header p { font-size: 10px; color: var(--text-muted); margin-top: 4px; letter-spacing: 1px; text-transform: uppercase; }
+
+  /* SECTIONS */
+  .section {
+    margin: 0;
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-title {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+  }
+
+  /* FOURNISSEUR TOGGLE */
+  .toggle-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .toggle-btn {
+    padding: 14px 8px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--white);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    line-height: 1.3;
+  }
+  .toggle-btn.active {
+    border-color: var(--accent);
+    background: rgba(232,200,74,0.1);
+    color: var(--accent);
+  }
+  .toggle-btn .logo-icon { font-size: 18px; display: block; margin-bottom: 4px; }
+
+  /* PHOTO ZONE */
+  .photo-zone {
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 0;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    overflow: hidden;
+    position: relative;
+    min-height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .photo-zone:active { border-color: var(--accent); }
+  .photo-zone.has-photo { border-style: solid; border-color: var(--accent); }
+  .photo-placeholder { padding: 30px 20px; }
+  .photo-placeholder .icon { font-size: 32px; margin-bottom: 8px; }
+  .photo-placeholder p { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+  .photo-placeholder small { font-size: 10px; color: #444; display: block; margin-top: 4px; }
+  #photo-preview {
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+    display: none;
+  }
+  .photo-overlay {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.7);
+    padding: 8px;
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: none;
+  }
+  .photo-zone.has-photo .photo-overlay { display: block; }
+  #photo-input { display: none; }
+
+  /* AI EXTRACT BUTTON */
+  .btn-extract {
+    display: none;
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px;
+    background: var(--accent);
+    color: var(--black);
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: opacity 0.2s;
+  }
+  .btn-extract.visible { display: block; }
+  .btn-extract:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* EXTRACTION STATUS */
+  #extract-status {
+    display: none;
+    margin-top: 10px;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  #extract-status.loading {
+    display: block;
+    background: rgba(232,200,74,0.08);
+    border: 1px solid rgba(232,200,74,0.2);
+    color: var(--accent);
+  }
+  #extract-status.success {
+    display: block;
+    background: rgba(50,180,100,0.08);
+    border: 1px solid rgba(50,180,100,0.2);
+    color: #4cc47a;
+  }
+  #extract-status.error {
+    display: block;
+    background: rgba(196,75,43,0.1);
+    border: 1px solid rgba(196,75,43,0.3);
+    color: #e07060;
+  }
+
+  /* FORM */
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  label {
+    display: block;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  label .required { color: var(--accent2); margin-left: 2px; }
+  label .optional { color: #444; font-size: 8px; }
+  input[type="text"], input[type="time"], input[type="number"] {
+    width: 100%;
+    background: var(--gray);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--white);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    padding: 12px 14px;
+    outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+  }
+  input:focus { border-color: var(--accent); }
+  input.filled { border-color: #333; background: #161616; }
+  input::placeholder { color: #444; font-size: 12px; }
+
+  /* CHAUFFEUR */
+  .chauffeur-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  /* SUBMIT */
+  .submit-area {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--black);
+    border-top: 1px solid var(--border);
+    padding: 16px 20px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  .btn-submit {
+    width: 100%;
+    padding: 16px;
+    background: var(--accent2);
+    color: var(--white);
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .btn-submit:active { transform: scale(0.98); opacity: 0.9; }
+  .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* MODAL */
+  .modal-bg {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 200;
+    align-items: flex-end;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: #111;
+    border: 1px solid var(--border);
+    border-radius: 16px 16px 0 0;
+    padding: 24px 20px;
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+  .modal p { font-size: 11px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5; }
+  .modal .summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .modal .summary-row:last-of-type { border-bottom: none; }
+  .modal .summary-label { color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+  .modal .summary-val { color: var(--white); text-align: right; max-width: 55%; word-break: break-word; }
+  .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+  .btn-cancel {
+    padding: 13px;
+    background: transparent;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--white);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .btn-confirm {
+    padding: 13px;
+    background: var(--accent2);
+    border: none;
+    border-radius: var(--radius);
+    color: var(--white);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+  }
+
+  /* GITHUB CONFIG */
+  .config-hint {
+    background: rgba(232,200,74,0.05);
+    border: 1px solid rgba(232,200,74,0.15);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 10px;
+    color: #888;
+    line-height: 1.6;
+  }
+  .config-hint strong { color: var(--accent); }
+  .config-hint a { color: var(--accent); text-decoration: none; }
+
+  /* SPINNER */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>FICHE <span>MISSION</span></h1>
+  <p>Générateur Samway / Paris Shuttle</p>
+</header>
+
+<!-- FOURNISSEUR -->
+<div class="section">
+  <div class="section-title">Fournisseur</div>
+  <div class="toggle-group">
+    <button class="toggle-btn active" id="btn-samway" onclick="setFournisseur('samway')">
+      <span class="logo-icon">🚗</span>
+      SAMWAY TRAVEL
+    </button>
+    <button class="toggle-btn" id="btn-paris" onclick="setFournisseur('paris_shuttle')">
+      <span class="logo-icon">✈️</span>
+      PARIS SHUTTLE ONE
+    </button>
+  </div>
+</div>
+
+<!-- CHAUFFEUR -->
+<div class="section">
+  <div class="section-title">Chauffeur</div>
+  <div class="field">
+    <label>Prénom <span class="required">*</span></label>
+    <input type="text" id="chauffeur-prenom" placeholder="ex: Mohamed" autocomplete="off">
+  </div>
+  <div class="field">
+    <label>Nom <span class="required">*</span></label>
+    <input type="text" id="chauffeur-nom" placeholder="ex: BENALI" autocomplete="off" style="text-transform:uppercase">
+  </div>
+</div>
+
+<!-- PHOTO (facultatif) -->
+<div class="section">
+  <div class="section-title">Photo du document <span style="color:#444;font-size:9px;letter-spacing:1px">— FACULTATIF</span></div>
+  <div class="photo-zone" id="photo-zone" onclick="document.getElementById('photo-input').click()">
+    <div class="photo-placeholder" id="photo-placeholder">
+      <div class="icon">📸</div>
+      <p>Prendre une photo ou choisir une image</p>
+      <small>Les infos seront extraites automatiquement</small>
+    </div>
+    <img id="photo-preview" alt="Document">
+    <div class="photo-overlay">Appuyer pour changer</div>
+  </div>
+  <input type="file" id="photo-input" accept="image/*" capture="environment" onchange="handlePhoto(event)">
+  <button class="btn-extract" id="btn-extract" onclick="extractFromPhoto()">
+    ✦ Extraire les infos
+  </button>
+  <div id="extract-status"></div>
+</div>
+
+<!-- INFOS MISSION -->
+<div class="section">
+  <div class="section-title">Informations mission</div>
+
+  <div class="field">
+    <label>Client <span class="required">*</span></label>
+    <input type="text" id="client" placeholder="ex: ROCHE, LESLIE ERICKA" autocomplete="off">
+  </div>
+
+  <div class="field">
+    <label>Heure de prise en charge <span class="required">*</span></label>
+    <input type="time" id="heure-pu" placeholder="03:20">
+  </div>
+
+  <div class="field">
+    <label>Adresse pickup <span class="required">*</span></label>
+    <input type="text" id="adresse-pu" placeholder="ex: 15 rue de la Paix, Paris" autocomplete="off">
+  </div>
+
+  <div class="field">
+    <label>Destination + Vol <span class="required">*</span></label>
+    <input type="text" id="destination" placeholder="ex: CDG, N° Vol TK-1830" autocomplete="off">
+  </div>
+
+  <div class="field">
+    <label>Passagers <span class="required">*</span></label>
+    <input type="number" id="passagers" value="2" min="1" max="20">
+  </div>
+</div>
+
+<!-- CONFIG GEMINI -->
+<div class="section">
+  <div class="section-title">Clé Gemini <span style="color:#444;font-size:9px;letter-spacing:1px">— POUR EXTRACTION PHOTO</span></div>
+  <div class="field">
+    <label>Google Gemini API Key <span style="color:#444" class="optional">(facultatif)</span></label>
+    <input type="text" id="gemini-key" placeholder="AIza..." autocomplete="off" autocorrect="off" spellcheck="false">
+  </div>
+  <div style="margin-top:10px" class="config-hint">
+    Gratuit sur <strong><a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com</a></strong> → Get API key.<br>
+    Sauvegardée localement sur ton téléphone.
+  </div>
+</div>
+
+<!-- CONFIG GITHUB -->
+<div class="section">
+  <div class="section-title">Configuration GitHub</div>
+  <div class="field">
+    <label>GitHub Token <span class="required">*</span></label>
+    <input type="text" id="gh-token" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off" autocorrect="off" spellcheck="false">
+  </div>
+  <div class="field">
+    <label>Repo (owner/repo) <span class="required">*</span></label>
+    <input type="text" id="gh-repo" placeholder="TonUser/samway-mission" autocomplete="off">
+  </div>
+  <div style="margin-top:10px" class="config-hint">
+    💡 Tes paramètres sont sauvegardés localement.<br>
+    Token → <strong><a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a></strong><br>
+    Scope requis : <strong>repo</strong> (workflow)
+  </div>
+</div>
+
+<!-- BOUTON GÉNERER -->
+<div class="submit-area">
+  <button class="btn-submit" id="btn-submit" onclick="openModal()">
+    GÉNÉRER LA FICHE →
+  </button>
+</div>
+
+<!-- MODAL CONFIRMATION -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <h2>Confirmer</h2>
+    <p>Vérifier les informations avant de lancer la génération.</p>
+    <div id="modal-summary"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Annuler</button>
+      <button class="btn-confirm" id="btn-confirm" onclick="submitMission()">Générer →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ─────────────────────────────────────────────────────────────────
+let fournisseur = 'samway';
+let photoBase64 = null;
+let photoMime = 'image/jpeg';
+
+// ─── PERSIST CONFIG ────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  const token = localStorage.getItem('gh_token');
+  const repo  = localStorage.getItem('gh_repo');
+  if (token) document.getElementById('gh-token').value = token;
+  if (repo)  document.getElementById('gh-repo').value  = repo;
+
+  document.getElementById('gh-token').addEventListener('change', e => localStorage.setItem('gh_token', e.target.value));
+  document.getElementById('gh-repo').addEventListener('change',  e => localStorage.setItem('gh_repo',  e.target.value));
+
+  // Gemini Key
+  const savedGemini = localStorage.getItem('gemini_key');
+  if (savedGemini) document.getElementById('gemini-key').value = savedGemini;
+  document.getElementById('gemini-key').addEventListener('change', e => {
+    const val = e.target.value.trim();
+    localStorage.setItem('gemini_key', val);
+  });
+});
+
+// ─── FOURNISSEUR ───────────────────────────────────────────────────────────
+function setFournisseur(val) {
+  fournisseur = val;
+  document.getElementById('btn-samway').classList.toggle('active', val === 'samway');
+  document.getElementById('btn-paris').classList.toggle('active', val === 'paris_shuttle');
+}
+
+// ─── PHOTO ─────────────────────────────────────────────────────────────────
+function handlePhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  photoMime = file.type || 'image/jpeg';
+
+  const reader = new FileReader();
+  reader.onload = ev => {
+    photoBase64 = ev.target.result.split(',')[1];
+    const preview = document.getElementById('photo-preview');
+    preview.src = ev.target.result;
+    preview.style.display = 'block';
+    document.getElementById('photo-placeholder').style.display = 'none';
+    document.getElementById('photo-zone').classList.add('has-photo');
+    document.getElementById('btn-extract').classList.add('visible');
+    document.getElementById('extract-status').className = '';
+    document.getElementById('extract-status').style.display = 'none';
+    // Lancer l'extraction automatiquement
+    extractFromPhoto();
+  };
+  reader.readAsDataURL(file);
+}
+
+// ─── EXTRACT VIA GEMINI (direct, gratuit) ─────────────────────────────────
+async function extractFromPhoto() {
+  if (!photoBase64) return;
+  const btn = document.getElementById('btn-extract');
+  const status = document.getElementById('extract-status');
+
+  const geminiKey = localStorage.getItem('gemini_key') || '';
+  if (!geminiKey) {
+    status.className = 'error';
+    status.style.display = 'block';
+    status.innerHTML = '✗ Ajoute ta clé Gemini dans la configuration ci-dessous.';
+    btn.disabled = false;
+    btn.innerHTML = '✦ Re-extraire';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Analyse en cours...';
+  status.className = 'loading';
+  status.style.display = 'block';
+  status.innerHTML = '<span class="spinner"></span>Gemini lit le document...';
+
+  try {
+    const prompt = `Tu es un assistant qui extrait des informations de fiches de mission VTC ou de messages de réservation (WhatsApp, email, bon de commande, screenshot).
+Analyse cette image et extrait les informations suivantes si présentes.
+Réponds UNIQUEMENT en JSON valide, sans texte autour, sans backticks.
+Si une info est absente, mets null.
+Format :
+{"client":"NOM, Prénom","heure_pu":"HH:MM","adresse_pu":"adresse complète","destination":"destination + vol si présent","passagers":"nombre"}`;
+
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [
+            { inline_data: { mime_type: photoMime, data: photoBase64 } },
+            { text: prompt }
+          ]}],
+          generationConfig: { temperature: 0, maxOutputTokens: 500 }
+        })
+      }
+    );
+    if (!res.ok) throw new Error(`Gemini HTTP ${res.status}`);
+    const data = await res.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const clean = text.replace(/```json|```/g, '').trim();
+    const extracted = JSON.parse(clean);
+
+    let filled = 0;
+    if (extracted.client)     { setField('client', extracted.client); filled++; }
+    if (extracted.heure_pu)   { setField('heure-pu', extracted.heure_pu); filled++; }
+    if (extracted.adresse_pu) { setField('adresse-pu', extracted.adresse_pu); filled++; }
+    if (extracted.destination){ setField('destination', extracted.destination); filled++; }
+    if (extracted.passagers)  { setField('passagers', extracted.passagers); filled++; }
+
+    status.className = 'success';
+    status.innerHTML = `✓ ${filled} champ${filled > 1 ? 's' : ''} extrait${filled > 1 ? 's' : ''}. Vérifie et corrige si besoin.`;
+    btn.innerHTML = '✦ Re-extraire';
+  } catch (err) {
+    status.className = 'error';
+    status.innerHTML = '✗ Extraction échouée. Remplis les champs manuellement.';
+    btn.innerHTML = '✦ Réessayer';
+    console.error(err);
+  }
+
+  btn.disabled = false;
+}
+
+function setField(id, val) {
+  if (!val) return;
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.value = val;
+  el.classList.add('filled');
+}
+
+// ─── MODAL ─────────────────────────────────────────────────────────────────
+function getValues() {
+  return {
+    fournisseur,
+    chauffeur: (document.getElementById('chauffeur-prenom').value.trim() + ' ' + document.getElementById('chauffeur-nom').value.trim().toUpperCase()).trim(),
+    client:     document.getElementById('client').value.trim(),
+    heure_pu:   document.getElementById('heure-pu').value.trim(),
+    adresse_pu: document.getElementById('adresse-pu').value.trim(),
+    destination:document.getElementById('destination').value.trim(),
+    passagers:  document.getElementById('passagers').value.trim(),
+    gh_token:   document.getElementById('gh-token').value.trim(),
+    gh_repo:    document.getElementById('gh-repo').value.trim(),
+  };
+}
+
+function openModal() {
+  const v = getValues();
+  const missing = [];
+  if (!v.chauffeur || v.chauffeur === '') missing.push('Chauffeur');
+  if (!v.client)      missing.push('Client');
+  if (!v.heure_pu)    missing.push('Heure PU');
+  if (!v.adresse_pu)  missing.push('Adresse pickup');
+  if (!v.destination) missing.push('Destination');
+  if (!v.gh_token)    missing.push('GitHub Token');
+  if (!v.gh_repo)     missing.push('GitHub Repo');
+
+  if (missing.length) {
+    alert('Champs manquants :\n• ' + missing.join('\n• '));
+    return;
+  }
+
+  const fLabel = v.fournisseur === 'samway' ? 'SAMWAY TRAVEL' : 'PARIS SHUTTLE ONE';
+  document.getElementById('modal-summary').innerHTML = `
+    <div class="summary-row"><span class="summary-label">Fournisseur</span><span class="summary-val">${fLabel}</span></div>
+    <div class="summary-row"><span class="summary-label">Chauffeur</span><span class="summary-val">${v.chauffeur}</span></div>
+    <div class="summary-row"><span class="summary-label">Client</span><span class="summary-val">${v.client}</span></div>
+    <div class="summary-row"><span class="summary-label">Heure PU</span><span class="summary-val">${v.heure_pu}</span></div>
+    <div class="summary-row"><span class="summary-label">Adresse</span><span class="summary-val">${v.adresse_pu}</span></div>
+    <div class="summary-row"><span class="summary-label">Destination</span><span class="summary-val">${v.destination}</span></div>
+    <div class="summary-row"><span class="summary-label">Passagers</span><span class="summary-val">${v.passagers}</span></div>
+  `;
+  document.getElementById('modal-bg').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-bg').classList.remove('open');
+}
+
+// ─── SUBMIT TO GITHUB ACTIONS ──────────────────────────────────────────────
+async function submitMission() {
+  const v = getValues();
+  const btn = document.getElementById('btn-confirm');
+  btn.disabled = true;
+  btn.textContent = 'Envoi...';
+
+  const [owner, repo] = v.gh_repo.split('/');
+  const url = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/generate.yml/dispatches`;
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${v.gh_token}`,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+        'X-GitHub-Api-Version': '2022-11-28'
+      },
+      body: JSON.stringify({
+        ref: 'main',
+        inputs: {
+          fournisseur: v.fournisseur,
+          chauffeur:   v.chauffeur,
+          client:      v.client,
+          heure_pu:    v.heure_pu,
+          adresse_pu:  v.adresse_pu,
+          destination: v.destination,
+          passagers:   v.passagers
+        }
+      })
+    });
+
+    if (res.status === 204) {
+      closeModal();
+      showSuccess(owner, repo);
+    } else {
+      const err = await res.json();
+      throw new Error(err.message || `HTTP ${res.status}`);
+    }
+  } catch (e) {
+    alert('Erreur : ' + e.message);
+    btn.disabled = false;
+    btn.textContent = 'Générer →';
+  }
+}
+
+function showSuccess(owner, repo) {
+  document.body.innerHTML = `
+    <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center;background:#0a0a0a;font-family:'DM Mono',monospace;">
+      <div style="font-size:56px;margin-bottom:20px">✅</div>
+      <h2 style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#f5f2eb;margin-bottom:10px">Mission lancée !</h2>
+      <p style="color:#666;font-size:12px;line-height:1.7;margin-bottom:30px">Le PDF est en cours de génération.<br>Télécharge-le dans les <strong style="color:#e8c84a">Artifacts</strong> du workflow.</p>
+      <a href="https://github.com/${owner}/${repo}/actions" target="_blank"
+         style="display:block;width:100%;max-width:320px;padding:16px;background:#c44b2b;color:#fff;border-radius:6px;text-decoration:none;font-family:'Syne',sans-serif;font-size:14px;font-weight:800;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">
+        Voir le workflow →
+      </a>
+      <button onclick="location.reload()" style="background:transparent;border:1.5px solid #2e2e2e;border-radius:6px;color:#666;font-family:'DM Mono',monospace;font-size:12px;padding:13px;width:100%;max-width:320px;cursor:pointer">
+        Nouvelle mission
+      </button>
+    </div>
+  `;
+}
+</script>
+</body>
+</html>
